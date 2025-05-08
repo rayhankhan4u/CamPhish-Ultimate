@@ -86,4 +86,3 @@ For ethical security consulting:
 ---
 
 *"Knowledge is power, but ethics is the switch that controls it."* - Rayhan
-```
